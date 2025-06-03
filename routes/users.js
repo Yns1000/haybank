@@ -2,6 +2,25 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const auth = require('../middlewares/auth');
+
+
+// Middleware pour vérifier le hashcode
+router.post('/login', (req, res) => {
+  const { login, mdp } = req.body;
+  db.query('SELECT * FROM Utilisateur WHERE login = ?', [login], async (err, results) => {
+    if (err || results.length === 0) return res.status(401).json({ error: 'Identifiants invalides' });
+    const user = results[0];
+    const valid = await bcrypt.compare(mdp, user.mdp);
+    if (!valid) return res.status(401).json({ error: 'Identifiants invalides' });
+
+    // Génère un hashcode/token
+    const hashcode = crypto.randomBytes(32).toString('hex');
+    db.query('UPDATE Utilisateur SET hashcode = ? WHERE idUtilisateur = ?', [hashcode, user.idUtilisateur]);
+    res.json({ hashcode });
+  });
+});
 
 // GET /utilisateurs
 router.get('/', (req, res) => {
@@ -12,7 +31,7 @@ router.get('/', (req, res) => {
 });
 
 // GET /utilisateurs/:id
-router.get('/:id', (req, res) => {
+router.get('/:id', auth, (req, res) => {
   const id = req.params.id;
   db.query('SELECT * FROM Utilisateur WHERE idUtilisateur = ?', [id], (err, results) => {
     if (err) return res.status(500).json({ error: err });
