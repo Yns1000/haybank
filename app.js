@@ -10,6 +10,7 @@ var categoriesRouter = require('./routes/categories');
 var sousCategoriesRouter = require('./routes/souscategories');
 var comptesRouter = require('./routes/comptes');
 var tiersRouter = require('./routes/tiers');
+var mouvementsRouter = require('./routes/mouvements');
 
 var app = express();
 
@@ -29,6 +30,7 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/souscategories', sousCategoriesRouter);
 app.use('/api/comptes', comptesRouter);
 app.use('/api/tiers', tiersRouter);
+app.use('/api/mouvements', mouvementsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
