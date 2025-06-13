@@ -6,7 +6,7 @@ const auth = require('../middlewares/auth');
 
 // GET /comptes (liste)
 router.get('/', (req, res) => {
-    db.query('SELECT * FROM Compte', (err, results) => {
+    db.query('SELECT * FROM compte', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });
@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
 // GET /comptes/:id (détail, protégé par auth)
 router.get('/:id', auth, (req, res) => {
     const id = req.params.id;
-    db.query('SELECT * FROM Compte WHERE idCompte = ?', [id], (err, results) => {
+    db.query('SELECT * FROM compte WHERE idCompte = ?', [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results[0]);
     });
@@ -25,7 +25,7 @@ router.get('/:id', auth, (req, res) => {
 router.post('/', (req, res) => {
     const { descriptionCompte, nomBanque, idUtilisateur } = req.body;
     db.query(
-        'INSERT INTO Compte (descriptionCompte, nomBanque, idUtilisateur) VALUES (?, ?, ?)',
+        'INSERT INTO compte (descriptionCompte, nomBanque, idUtilisateur) VALUES (?, ?, ?)',
         [descriptionCompte, nomBanque, idUtilisateur],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
@@ -46,7 +46,7 @@ router.patch('/:id', (req, res) => {
     values.push(id);
 
     db.query(
-        `UPDATE Compte SET ${setClause} WHERE idCompte = ?`,
+        `UPDATE compte SET ${setClause} WHERE idCompte = ?`,
         values,
         (err) => {
             if (err) return res.status(500).json({ error: err });
@@ -58,7 +58,7 @@ router.patch('/:id', (req, res) => {
 // DELETE /comptes/:id (suppression)
 router.delete('/:id', (req, res) => {
     const id = req.params.id;
-    db.query('DELETE FROM Compte WHERE idCompte = ?', [id], (err) => {
+    db.query('DELETE FROM compte WHERE idCompte = ?', [id], (err) => {
         if (err) return res.status(500).json({ error: err });
         res.json({ message: 'Compte supprimé' });
     });

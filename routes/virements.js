@@ -4,7 +4,7 @@ const db = require('../db');
 
 // GET /virements (liste)
 router.get('/', (req, res) => {
-    db.query('SELECT * FROM Virement', (err, results) => {
+    db.query('SELECT * FROM virement', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });
@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
 // GET /virements/:id (détail)
 router.get('/:id', (req, res) => {
     const id = req.params.id;
-    db.query('SELECT * FROM Virement WHERE idVirement = ?', [id], (err, results) => {
+    db.query('SELECT * FROM virement WHERE idVirement = ?', [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results[0]);
     });
@@ -23,7 +23,7 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
     const { idCompteDebit, idCompteCredit, montant, dateVirement, idTiers, idCategorie } = req.body;
     db.query(
-        'INSERT INTO Virement (idCompteDebit, idCompteCredit, montant, dateVirement, idTiers, idCategorie) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO virement (idCompteDebit, idCompteCredit, montant, dateVirement, idTiers, idCategorie) VALUES (?, ?, ?, ?, ?, ?)',
         [idCompteDebit, idCompteCredit, montant, dateVirement, idTiers, idCategorie],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
@@ -44,7 +44,7 @@ router.patch('/:id', (req, res) => {
     values.push(id);
 
     db.query(
-        `UPDATE Virement SET ${setClause} WHERE idVirement = ?`,
+        `UPDATE virement SET ${setClause} WHERE idVirement = ?`,
         values,
         (err) => {
             if (err) return res.status(500).json({ error: err });
@@ -56,7 +56,7 @@ router.patch('/:id', (req, res) => {
 // DELETE /virements/:id (suppression)
 router.delete('/:id', (req, res) => {
     const id = req.params.id;
-    db.query('DELETE FROM Virement WHERE idVirement = ?', [id], (err) => {
+    db.query('DELETE FROM virement WHERE idVirement = ?', [id], (err) => {
         if (err) return res.status(500).json({ error: err });
         res.json({ message: 'Virement supprimé' });
     });

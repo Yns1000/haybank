@@ -4,7 +4,7 @@ const db = require('../db');
 
 // GET /souscategories (liste)
 router.get('/', (req, res) => {
-    db.query('SELECT * FROM SousCategorie', (err, results) => {
+    db.query('SELECT * FROM sousCategorie', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });
@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
 // GET /souscategories/:id (détail)
 router.get('/:id', (req, res) => {
     const id = req.params.id;
-    db.query('SELECT * FROM SousCategorie WHERE idSousCategorie = ?', [id], (err, results) => {
+    db.query('SELECT * FROM sousCategorie WHERE idSousCategorie = ?', [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results[0]);
     });
@@ -23,7 +23,7 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
     const { nomSousCategorie, idCategorie } = req.body;
     db.query(
-        'INSERT INTO SousCategorie (nomSousCategorie, idCategorie) VALUES (?, ?)',
+        'INSERT INTO sousCategorie (nomSousCategorie, idCategorie) VALUES (?, ?)',
         [nomSousCategorie, idCategorie],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
@@ -44,7 +44,7 @@ router.patch('/:id', (req, res) => {
     values.push(id);
 
     db.query(
-        `UPDATE SousCategorie SET ${setClause} WHERE idSousCategorie = ?`,
+        `UPDATE sousCategorie SET ${setClause} WHERE idSousCategorie = ?`,
         values,
         (err) => {
             if (err) return res.status(500).json({ error: err });
@@ -56,7 +56,7 @@ router.patch('/:id', (req, res) => {
 // DELETE /souscategories/:id (suppression)
 router.delete('/:id', (req, res) => {
     const id = req.params.id;
-    db.query('DELETE FROM SousCategorie WHERE idSousCategorie = ?', [id], (err) => {
+    db.query('DELETE FROM sousCategorie WHERE idSousCategorie = ?', [id], (err) => {
         if (err) return res.status(500).json({ error: err });
         res.json({ message: 'Sous-catégorie supprimée' });
     });

@@ -3,7 +3,7 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Accueil HayBan' });
+  res.render('index', { title: 'Accueil HayBank' });
 });
 
 module.exports = router;

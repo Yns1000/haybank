@@ -9,7 +9,7 @@ const auth = require('../middlewares/auth');
 // Middleware pour vérifier le hashcode
 router.post('/login', (req, res) => {
   const { login, mdp } = req.body;
-  db.query('SELECT * FROM Utilisateur WHERE login = ?', [login], async (err, results) => {
+  db.query('SELECT * FROM utilisateur WHERE login = ?', [login], async (err, results) => {
     if (err || results.length === 0) return res.status(401).json({ error: 'Identifiants invalides' });
     const user = results[0];
     const valid = await bcrypt.compare(mdp, user.mdp);
@@ -17,14 +17,14 @@ router.post('/login', (req, res) => {
 
     // Génère un hashcode/token
     const hashcode = crypto.randomBytes(32).toString('hex');
-    db.query('UPDATE Utilisateur SET hashcode = ? WHERE idUtilisateur = ?', [hashcode, user.idUtilisateur]);
+    db.query('UPDATE utilisateur SET hashcode = ? WHERE idUtilisateur = ?', [hashcode, user.idUtilisateur]);
     res.json({ hashcode });
   });
 });
 
 // GET /utilisateurs
 router.get('/', (req, res) => {
-  db.query('SELECT * FROM Utilisateur', (err, results) => {
+  db.query('SELECT * FROM utilisateur', (err, results) => {
     if (err) return res.status(500).json({ error: err });
     res.json(results);
   });
@@ -33,7 +33,7 @@ router.get('/', (req, res) => {
 // GET /utilisateurs/:id
 router.get('/:id', auth, (req, res) => {
   const id = req.params.id;
-  db.query('SELECT * FROM Utilisateur WHERE idUtilisateur = ?', [id], (err, results) => {
+  db.query('SELECT * FROM utilisateur WHERE idUtilisateur = ?', [id], (err, results) => {
     if (err) return res.status(500).json({ error: err });
     res.json(results[0]);
   });
@@ -78,7 +78,7 @@ router.patch('/:id', async (req, res) => {
   values.push(id);
 
   db.query(
-      `UPDATE Utilisateur SET ${setClause} WHERE idUtilisateur = ?`,
+      `UPDATE utilisateur SET ${setClause} WHERE idUtilisateur = ?`,
       values,
       (err) => {
         if (err) return res.status(500).json({ error: err });
@@ -90,7 +90,7 @@ router.patch('/:id', async (req, res) => {
 // DELETE /utilisateurs/:id
 router.delete('/:id', (req, res) => {
   const id = req.params.id;
-  db.query('DELETE FROM Utilisateur WHERE idUtilisateur = ?', [id], (err) => {
+  db.query('DELETE FROM utilisateur WHERE idUtilisateur = ?', [id], (err) => {
     if (err) return res.status(500).json({ error: err });
     res.json({ message: 'Utilisateur supprimé' });
   });

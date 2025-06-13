@@ -4,7 +4,7 @@ const db = require('../db');
 
 // GET /mouvements (liste)
 router.get('/', (req, res) => {
-    db.query('SELECT * FROM Mouvement', (err, results) => {
+    db.query('SELECT * FROM mouvement', (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
     });
@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
 // GET /mouvements/:id (détail)
 router.get('/:id', (req, res) => {
     const id = req.params.id;
-    db.query('SELECT * FROM Mouvement WHERE idMouvement = ?', [id], (err, results) => {
+    db.query('SELECT * FROM mouvement WHERE idMouvement = ?', [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results[0]);
     });
@@ -23,7 +23,7 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
     const { dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement } = req.body;
     db.query(
-        'INSERT INTO Mouvement (dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO mouvement (dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement],
         (err, result) => {
             if (err) return res.status(500).json({ error: err });
@@ -44,7 +44,7 @@ router.patch('/:id', (req, res) => {
     values.push(id);
 
     db.query(
-        `UPDATE Mouvement SET ${setClause} WHERE idMouvement = ?`,
+        `UPDATE mouvement SET ${setClause} WHERE idMouvement = ?`,
         values,
         (err) => {
             if (err) return res.status(500).json({ error: err });
@@ -56,7 +56,7 @@ router.patch('/:id', (req, res) => {
 // DELETE /mouvements/:id (suppression)
 router.delete('/:id', (req, res) => {
     const id = req.params.id;
-    db.query('DELETE FROM Mouvement WHERE idMouvement = ?', [id], (err) => {
+    db.query('DELETE FROM mouvement WHERE idMouvement = ?', [id], (err) => {
         if (err) return res.status(500).json({ error: err });
         res.json({ message: 'Mouvement supprimé' });
     });
