@@ -7,12 +7,23 @@ const auth = require('../middlewares/auth');
 // GET /comptes (liste, protégé et filtré)
 router.get('/', auth, (req, res) => {
     // 406 Not Acceptable
-    if (req.headers['accept'] && req.headers['accept'] !== 'application/json') {
-        return res.status(406).json({ error: 'Format non acceptable, veuillez utiliser JSON.' });
+    if (
+        req.headers['accept'] &&
+        !req.headers["accept"].includes("application/json") &&
+        req.headers['accept'] !== '*/*'
+    ) {
+        return res
+            .status(406)
+            .json({ error: 'Format non acceptable, veuillez utiliser JSON.' });
     }
     // 415 Unsupported Media Type (optionnel pour GET)
-    if (req.headers['content-type'] && req.headers['content-type'] !== 'application/json') {
-        return res.status(415).json({ error: 'Format non supporté, veuillez utiliser JSON.' });
+    if (
+        req.headers['content-type'] &&
+        req.headers['content-type'] !== 'application/json'
+    ) {
+        return res
+            .status(415)
+            .json({ error: 'Format non supporté, veuillez utiliser JSON.' });
     }
 
     const idUtilisateur = req.user.idUtilisateur;
@@ -81,7 +92,11 @@ router.post('/', auth, (req, res) => {
 // PATCH /comptes/:id (modification, protégé et filtré)
 router.patch('/:id', auth, (req, res) => {
     // 406 Not Acceptable
-    if (req.headers['accept'] && req.headers['accept'] !== 'application/json') {
+    if (
+        req.headers['accept'] &&
+        req.headers['accept'] !== '*/*' &&
+        !req.headers['accept'].includes('application/json')
+    ) {
         return res.status(406).json({ error: 'Format non acceptable, veuillez utiliser JSON.' });
     }
     // 415 Unsupported Media Type
