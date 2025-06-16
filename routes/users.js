@@ -26,6 +26,10 @@ router.post('/login', (req, res) => {
 router.get('/', (req, res) => {
   db.query('SELECT * FROM utilisateur', (err, results) => {
     if (err) return res.status(500).json({ error: err });
+    // Ne retourne pas les mots de passe
+    results.forEach(user => {
+      delete user.mdp;
+    });
     res.json(results);
   });
 });
@@ -35,6 +39,9 @@ router.get('/:id', auth, (req, res) => {
   const id = req.params.id;
   db.query('SELECT * FROM utilisateur WHERE idUtilisateur = ?', [id], (err, results) => {
     if (err) return res.status(500).json({ error: err });
+    if (results.length === 0) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    // Ne retourne pas le mot de passe
+    delete results[0].mdp;
     res.json(results[0]);
   });
 });
@@ -42,19 +49,27 @@ router.get('/:id', auth, (req, res) => {
 // POST /utilisateurs
 router.post('/', async (req, res) => {
   const { nomUtilisateur, prenomUtilisateur, login, mdp, hashcode, ville, codePostal } = req.body;
-  try {
-    const hashMdp = mdp ? await bcrypt.hash(mdp, 10) : null;
-    db.query(
+  if (!login || !mdp) return res.status(400).json({ error: 'Login et mot de passe requis.' });
+
+  // Vérifie si le login existe déjà
+  db.query('SELECT idUtilisateur FROM utilisateur WHERE login = ?', [login], async (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    if (results.length > 0) return res.status(409).json({ error: 'Login déjà utilisé.' });
+
+    try {
+      const hashMdp = await bcrypt.hash(mdp, 10);
+      db.query(
         'INSERT INTO Utilisateur (nomUtilisateur, prenomUtilisateur, login, mdp, hashcode, ville, codePostal) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [nomUtilisateur, prenomUtilisateur, login, hashMdp, hashcode, ville, codePostal],
         (err, result) => {
           if (err) return res.status(500).json({ error: err });
           res.status(201).json({ idUtilisateur: result.insertId, nomUtilisateur, prenomUtilisateur, login, ville, codePostal });
         }
-    );
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+      );
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 });
 
 // PATCH /utilisateurs/:id
@@ -82,6 +97,11 @@ router.patch('/:id', async (req, res) => {
       values,
       (err) => {
         if (err) return res.status(500).json({ error: err });
+        if(result.affectedRows === 0) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        // Ne retourne pas le mot de passe
+        keys.forEach(key => {
+          if (key === 'mdp') delete fields[key];
+        });
         res.json({ message: 'Utilisateur mis à jour', idUtilisateur: id });
       }
   );
@@ -92,6 +112,7 @@ router.delete('/:id', (req, res) => {
   const id = req.params.id;
   db.query('DELETE FROM utilisateur WHERE idUtilisateur = ?', [id], (err) => {
     if (err) return res.status(500).json({ error: err });
+    if (this.affectedRows === 0) return res.status(404).json({ error: 'Utilisateur non trouvé' });
     res.json({ message: 'Utilisateur supprimé' });
   });
 });
