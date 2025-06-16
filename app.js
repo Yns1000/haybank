@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const { swaggerUi, specs } = require('./swagger');
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -33,6 +35,9 @@ app.use('/api/comptes', comptesRouter);
 app.use('/api/tiers', tiersRouter);
 app.use('/api/mouvements', mouvementsRouter);
 app.use('/api/virements', virementsRouter);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
