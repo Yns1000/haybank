@@ -7,6 +7,11 @@ const auth = require('../middlewares/auth');
 /**
  * @swagger
  * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  *   schemas:
  *     Compte:
  *       type: object
@@ -34,18 +39,12 @@ const auth = require('../middlewares/auth');
 
 /**
  * @swagger
- * /comptes:
+ * /api/comptes:
  *   get:
  *     summary: Liste les comptes de l'utilisateur connecté
  *     tags: [Comptes]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
  *         description: Liste retournée
@@ -63,7 +62,7 @@ const auth = require('../middlewares/auth');
  *         description: Format non supporté
  */
 
-// GET /comptes (liste, protégé et filtré)
+// GET /api/comptes (liste, protégé et filtré)
 router.get('/', auth, (req, res) => {
     // 406 Not Acceptable
     if (
@@ -95,7 +94,7 @@ router.get('/', auth, (req, res) => {
 
 /**
  * @swagger
- * /comptes/{id}:
+ * /api/comptes/{id}:
  *   get:
  *     summary: Détail d'un compte
  *     tags: [Comptes]
@@ -107,11 +106,6 @@ router.get('/', auth, (req, res) => {
  *         required: true
  *         schema:
  *           type: integer
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
  *         description: Compte trouvé
@@ -123,7 +117,7 @@ router.get('/', auth, (req, res) => {
  *         description: Format non supporté
  */
 
-// GET /comptes/:id (détail, protégé et filtré)
+// GET /api/comptes/:id (détail, protégé et filtré)
 router.get('/:id', auth, (req, res) => {
     // 415 Unsupported Media Type (optionnel pour GET)
     if (req.headers['content-type'] && req.headers['content-type'] !== 'application/json') {
@@ -150,18 +144,12 @@ router.get('/:id', auth, (req, res) => {
 
 /**
  * @swagger
- * /comptes:
+ * /api/comptes:
  *   post:
  *     summary: Crée un compte
  *     tags: [Comptes]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -184,7 +172,7 @@ router.get('/:id', auth, (req, res) => {
  *         description: Format non supporté
  */
 
-// POST /comptes (création, protégé)
+// POST /api/comptes (création, protégé)
 router.post('/', auth, (req, res) => {
     // 415 Unsupported Media Type
     if (req.headers['content-type'] && req.headers['content-type'] !== 'application/json') {
@@ -220,7 +208,7 @@ router.post('/', auth, (req, res) => {
 
 /**
  * @swagger
- * /comptes/{id}:
+ * /api/comptes/{id}:
  *   patch:
  *     summary: Modifie un compte
  *     tags: [Comptes]
@@ -232,11 +220,6 @@ router.post('/', auth, (req, res) => {
  *         required: true
  *         schema:
  *           type: integer
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -264,7 +247,7 @@ router.post('/', auth, (req, res) => {
  *         description: Format non supporté
  */
 
-// PATCH /comptes/:id (modification, protégé et filtré)
+// PATCH /api/comptes/:id (modification, protégé et filtré)
 router.patch('/:id', auth, (req, res) => {
     // 406 Not Acceptable
     if (
@@ -344,7 +327,7 @@ router.patch('/:id', auth, (req, res) => {
 
 /**
  * @swagger
- * /comptes/{id}:
+ * /api/comptes/{id}:
  *   delete:
  *     summary: Supprime un compte
  *     tags: [Comptes]
@@ -356,11 +339,6 @@ router.patch('/:id', auth, (req, res) => {
  *         required: true
  *         schema:
  *           type: integer
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
  *         description: Supprimé
@@ -372,7 +350,7 @@ router.patch('/:id', auth, (req, res) => {
  *         description: Format non supporté
  */
 
-// DELETE /comptes/:id (suppression, protégé et filtré)
+// DELETE /api/comptes/:id (suppression, protégé et filtré)
 router.delete('/:id', auth, (req, res) => {
     // 415 Unsupported Media Type
     if (req.headers['content-type'] && req.headers['content-type'] !== 'application/json') {

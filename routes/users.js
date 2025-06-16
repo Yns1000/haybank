@@ -5,6 +5,74 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const auth = require('../middlewares/auth');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Utilisateur:
+ *       type: object
+ *       properties:
+ *         idUtilisateur:
+ *           type: integer
+ *           example: 1
+ *         nomUtilisateur:
+ *           type: string
+ *           example: "Doe"
+ *         prenomUtilisateur:
+ *           type: string
+ *           example: "John"
+ *         login:
+ *           type: string
+ *           example: "jdoe"
+ *         ville:
+ *           type: string
+ *           example: "Paris"
+ *         codePostal:
+ *           type: string
+ *           example: "75000"
+ *         hashcode:
+ *           type: string
+ *           example: "aef123..."
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *
+ * tags:
+ *   - name: Utilisateurs
+ *     description: Gestion des utilisateurs et authentification
+ */
+
+/**
+ * @swagger
+ * /api/users/login:
+ *   post:
+ *     summary: Authentifie un utilisateur
+ *     tags: [Utilisateurs]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             required: [login, mdp]
+ *             properties:
+ *               login:
+ *                 type: string
+ *                 example: yns2
+ *               mdp:
+ *                 type: string
+ *                 example: yns10
+ *     responses:
+ *       200:
+ *         description: Hashcode renvoyé
+ *       400:
+ *         description: Champs manquants
+ *       401:
+ *         description: Identifiants invalides
+ *       415:
+ *         description: Format non supporté
+ */
 
 // Middleware pour vérifier le hashcode
 router.post('/login', (req, res) => {
@@ -51,7 +119,36 @@ router.post('/login', (req, res) => {
   });
 });
 
-// GET /utilisateurs (infos de l'utilisateur connecté)
+
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Récupère l'utilisateur connecté
+ *     tags: [Utilisateurs]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: Bearer <token>
+ *     responses:
+ *       200:
+ *         description: Utilisateur trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Utilisateur'
+ *       404:
+ *         description: Non trouvé
+ *       406:
+ *         description: Format non acceptable
+ */
+
+// GET /users (infos de l'utilisateur connecté)
 router.get('/', auth, (req, res) => {
   // 406 Not Acceptable
   if (
@@ -72,8 +169,49 @@ router.get('/', auth, (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Crée un utilisateur
+ *     tags: [Utilisateurs]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             required: [login, mdp]
+ *             properties:
+ *               nomUtilisateur:
+ *                 type: string
+ *                 example: "Boughriet"
+ *               prenomUtilisateur:
+ *                 type: string
+ *                 example: "Younes"
+ *               login:
+ *                 type: string
+ *                 example: "yns2"
+ *               mdp:
+ *                 type: string
+ *                 example: "yns10"
+ *               ville:
+ *                 type: string
+ *                 example: "Lens"
+ *               codePostal:
+ *                 type: string
+ *                 example: "62300"
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé
+ *       400:
+ *         description: Champs manquants
+ *       409:
+ *         description: Login déjà utilisé
+ *       415:
+ *         description: Format non supporté
+ */
 
-// POST /utilisateurs
+// POST /users
 router.post('/', async (req, res) => {
   // 415 Unsupported Media Type
   if (
@@ -116,7 +254,46 @@ router.post('/', async (req, res) => {
   });
 });
 
-// PATCH /utilisateurs/:id
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   patch:
+ *     summary: Modifie un utilisateur
+ *     tags: [Utilisateurs]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Mise à jour réussie
+ *       400:
+ *         description: Aucun champ à mettre à jour
+ *       409:
+ *         description: Login déjà utilisé
+ *       404:
+ *         description: Utilisateur non trouvé
+ *       415:
+ *         description: Format non supporté
+ */
+
+// PATCH /users/:id
 router.patch('/:id', auth, async (req, res) => {
   // 415 Unsupported Media Type
   if (
@@ -174,7 +351,35 @@ router.patch('/:id', auth, async (req, res) => {
   );
 });
 
-// DELETE /utilisateurs/:id
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   delete:
+ *     summary: Supprime un utilisateur
+ *     tags: [Utilisateurs]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Supprimé
+ *       404:
+ *         description: Introuvable
+ *       415:
+ *         description: Format non supporté
+ */
+
+// DELETE /users/:id
 router.delete('/:id', auth, (req, res) => {
   // 415 Unsupported Media Type
   if (
