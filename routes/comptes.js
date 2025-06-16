@@ -4,6 +4,65 @@ const router = express.Router();
 const db = require('../db');
 const auth = require('../middlewares/auth');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Compte:
+ *       type: object
+ *       properties:
+ *         idCompte:
+ *           type: integer
+ *           example: 1
+ *         descriptionCompte:
+ *           type: string
+ *           example: "Compte courant"
+ *         nomBanque:
+ *           type: string
+ *           example: "BNP"
+ *         idUtilisateur:
+ *           type: integer
+ *           example: 2
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Comptes
+ *     description: Gestion des comptes utilisateur
+ */
+
+/**
+ * @swagger
+ * /comptes:
+ *   get:
+ *     summary: Liste les comptes de l'utilisateur connecté
+ *     tags: [Comptes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Liste retournée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Compte'
+ *       204:
+ *         description: Aucun compte
+ *       406:
+ *         description: Format non acceptable
+ *       415:
+ *         description: Format non supporté
+ */
+
 // GET /comptes (liste, protégé et filtré)
 router.get('/', auth, (req, res) => {
     // 406 Not Acceptable
@@ -34,6 +93,36 @@ router.get('/', auth, (req, res) => {
     });
 });
 
+/**
+ * @swagger
+ * /comptes/{id}:
+ *   get:
+ *     summary: Détail d'un compte
+ *     tags: [Comptes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Compte trouvé
+ *       403:
+ *         description: Accès interdit
+ *       404:
+ *         description: Non trouvé
+ *       415:
+ *         description: Format non supporté
+ */
+
 // GET /comptes/:id (détail, protégé et filtré)
 router.get('/:id', auth, (req, res) => {
     // 415 Unsupported Media Type (optionnel pour GET)
@@ -56,6 +145,44 @@ router.get('/:id', auth, (req, res) => {
         res.status(200).json(compte);
     });
 });
+
+
+
+/**
+ * @swagger
+ * /comptes:
+ *   post:
+ *     summary: Crée un compte
+ *     tags: [Comptes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             required: [descriptionCompte, nomBanque]
+ *             properties:
+ *               descriptionCompte:
+ *                 type: string
+ *                 example: "Livret A"
+ *               nomBanque:
+ *                 type: string
+ *                 example: "LCL"
+ *     responses:
+ *       201:
+ *         description: Compte créé
+ *       409:
+ *         description: Doublon
+ *       415:
+ *         description: Format non supporté
+ */
 
 // POST /comptes (création, protégé)
 router.post('/', auth, (req, res) => {
@@ -88,6 +215,54 @@ router.post('/', auth, (req, res) => {
         }
     );
 });
+
+
+
+/**
+ * @swagger
+ * /comptes/{id}:
+ *   patch:
+ *     summary: Modifie un compte
+ *     tags: [Comptes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             properties:
+ *               descriptionCompte:
+ *                 type: string
+ *               nomBanque:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Compte modifié
+ *       304:
+ *         description: Aucune modification
+ *       400:
+ *         description: Aucune donnée fournie
+ *       403:
+ *         description: Accès interdit
+ *       404:
+ *         description: Introuvable
+ *       409:
+ *         description: Doublon
+ *       415:
+ *         description: Format non supporté
+ */
 
 // PATCH /comptes/:id (modification, protégé et filtré)
 router.patch('/:id', auth, (req, res) => {
@@ -166,6 +341,36 @@ router.patch('/:id', auth, (req, res) => {
         }
     });
 });
+
+/**
+ * @swagger
+ * /comptes/{id}:
+ *   delete:
+ *     summary: Supprime un compte
+ *     tags: [Comptes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Supprimé
+ *       403:
+ *         description: Accès interdit
+ *       404:
+ *         description: Introuvable
+ *       415:
+ *         description: Format non supporté
+ */
 
 // DELETE /comptes/:id (suppression, protégé et filtré)
 router.delete('/:id', auth, (req, res) => {
