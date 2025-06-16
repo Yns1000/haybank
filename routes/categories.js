@@ -46,20 +46,21 @@ const db = require("../db");
  *       415:
  *         description: Format non supporté
  */
-router.get("/", (req, res) => {
-  db.query("SELECT * FROM categorie", (err, results) => {
-    if (err) return res.status(500).json({ error: err });
-    if (results.length === 0) return res.status(204).send();
-    if (
-      req.headers["content-type"] &&
-      req.headers["content-type"] !== "application/json"
-    ) {
-      return res
-        .status(415)
-        .json({ error: "Format non supporté, veuillez utiliser JSON." });
-    }
-    res.json(results);
-  });
+router.get('/', (req, res) => {
+    db.query('SELECT * FROM categorie', (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        // 204 No Content si aucune catégorie
+        if (results.length === 0) return res.status(204).send();
+        // 406 Not Acceptable si le format n'est pas JSON
+        if (req.headers['accept'] && req.headers['accept'] !== 'application/json') {
+            return res.status(406).json({ error: 'Format non acceptable, veuillez utiliser JSON.' });
+        }
+        // 415 Unsupported Media Type si le format n'est pas JSON
+        if (req.headers['content-type'] && req.headers['content-type'] !== 'application/json') {
+            return res.status(415).json({ error: 'Format non supporté, veuillez utiliser JSON.' });
+        }
+        res.json(results);
+    });
 });
 
 /**
