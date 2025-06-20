@@ -1,64 +1,229 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const auth = require('../middlewares/auth');
 
-// GET /mouvements (liste)
-router.get('/', (req, res) => {
-    db.query('SELECT * FROM mouvement', (err, results) => {
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *   schemas:
+ *     Mouvement:
+ *       type: object
+ *       required:
+ *         - dateMouvement
+ *         - idCompte
+ *         - idTiers
+ *         - idCategorie
+ *         - montant
+ *         - typeMouvement
+ *       properties:
+ *         dateMouvement:
+ *           type: string
+ *           format: date
+ *           example: "2025-06-20"
+ *         idCompte:
+ *           type: integer
+ *           example: 3
+ *         idTiers:
+ *           type: integer
+ *           example: 1
+ *         idCategorie:
+ *           type: integer
+ *           example: 2
+ *         idSousCategorie:
+ *           type: integer
+ *           example: 2
+ *           nullable: true
+ *         idVirement:
+ *           type: integer
+ *           nullable: true
+ *           example: null
+ *         montant:
+ *           type: number
+ *           example: 120.5
+ *         typeMouvement:
+ *           type: string
+ *           enum: ["D", "C"]
+ *           example: "D"
+ *
+ * tags:
+ *   - name: Mouvements
+ *     description: Gestion des mouvements utilisateurs
+ */
+
+/**
+ * @swagger
+ * /api/mouvements:
+ *   get:
+ *     summary: Récupère la liste des mouvements de l'utilisateur
+ *     tags: [Mouvements]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Mouvement'
+ *       204:
+ *         description: Aucun mouvement
+ *       401:
+ *         description: Unauthorized
+ *       406:
+ *         description: Not acceptable
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/', auth, (req, res) => {
+    if (req.headers['accept'] && !req.headers['accept'].includes('application/json') && req.headers['accept'] !== '*/*')
+        return res.status(406).json({ error: 'Format non acceptable' });
+
+    const idUtilisateur = req.user.idUtilisateur;
+    db.query('SELECT idCompte FROM compte WHERE idUtilisateur = ?', [idUtilisateur], (err, comptes) => {
         if (err) return res.status(500).json({ error: err });
-        res.json(results);
+        if (comptes.length === 0) return res.status(204).send();
+
+        const compteIds = comptes.map(c => c.idCompte);
+        db.query('SELECT * FROM mouvement WHERE idCompte IN (?)', [compteIds], (err, results) => {
+            if (err) return res.status(500).json({ error: err });
+            if (results.length === 0) return res.status(204).send();
+            res.status(200).json(results);
+        });
     });
 });
 
-// GET /mouvements/:id (détail)
-router.get('/:id', (req, res) => {
+/**
+ * @swagger
+ * /api/mouvements/{id}:
+ *   get:
+ *     summary: Récupère les détails d'un mouvement par son ID
+ *     tags: [Mouvements]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Mouvement'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Not found
+ *       406:
+ *         description: Not acceptable
+ *       415:
+ *         description: Unsupported Media Type
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/:id', auth, (req, res) => {
+    if (req.headers['accept'] && !req.headers['accept'].includes('application/json') && req.headers['accept'] !== '*/*')
+        return res.status(406).json({ error: 'Format non acceptable' });
+    if (req.headers['content-type'] && req.headers['content-type'] !== 'application/json')
+        return res.status(415).json({ error: 'Format non supporté' });
+
     const id = req.params.id;
+    const idUtilisateur = req.user.idUtilisateur;
     db.query('SELECT * FROM mouvement WHERE idMouvement = ?', [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
-        res.json(results[0]);
+        if (results.length === 0) return res.status(404).json({ error: 'Mouvement introuvable' });
+
+        const idCompte = results[0].idCompte;
+        db.query('SELECT * FROM compte WHERE idCompte = ? AND idUtilisateur = ?', [idCompte, idUtilisateur], (err, comptes) => {
+            if (err) return res.status(500).json({ error: err });
+            if (comptes.length === 0) return res.status(403).json({ error: 'Accès interdit' });
+            res.status(200).json(results[0]);
+        });
     });
 });
 
-// POST /mouvements (création)
-router.post('/', (req, res) => {
+/**
+ * @swagger
+ * /api/mouvements:
+ *   post:
+ *     summary: Crée un nouveau mouvement
+ *     tags: [Mouvements]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Mouvement'
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Mouvement'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       409:
+ *         description: Conflict
+ *       415:
+ *         description: Unsupported Media Type
+ *       406:
+ *         description: Not acceptable
+ *       500:
+ *         description: Internal Server Error
+ */
+router.post('/', auth, (req, res) => {
+    if (req.headers['content-type'] !== 'application/json')
+        return res.status(415).json({ error: 'Format non supporté' });
+    if (req.headers['accept'] && !req.headers['accept'].includes('application/json') && req.headers['accept'] !== '*/*')
+        return res.status(406).json({ error: 'Format non acceptable' });
+
     const { dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement } = req.body;
-    db.query(
-        'INSERT INTO mouvement (dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement],
-        (err, result) => {
-            if (err) return res.status(500).json({ error: err });
-            res.status(201).json({ idMouvement: result.insertId, ...req.body });
-        }
-    );
-});
 
-// PATCH /mouvements/:id (modification)
-router.patch('/:id', (req, res) => {
-    const id = req.params.id;
-    const fields = { ...req.body };
-    const keys = Object.keys(fields);
-    if (keys.length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour.' });
+    if (
+        dateMouvement == null ||
+        idCompte == null ||
+        idTiers == null ||
+        idCategorie == null ||
+        montant == null ||
+        typeMouvement == null
+    ) {
+        return res.status(400).json({ error: 'Champs manquants ou invalides' });
+    }
 
-    const setClause = keys.map(key => `${key} = ?`).join(', ');
-    const values = keys.map(key => fields[key]);
-    values.push(id);
+    if (montant <= 0 || !["D", "C"].includes(typeMouvement))
+        return res.status(409).json({ error: 'Conflit : montant ou typeMouvement invalide' });
 
-    db.query(
-        `UPDATE mouvement SET ${setClause} WHERE idMouvement = ?`,
-        values,
-        (err) => {
-            if (err) return res.status(500).json({ error: err });
-            res.json({ message: 'Mouvement mis à jour', idMouvement: id });
-        }
-    );
-});
-
-// DELETE /mouvements/:id (suppression)
-router.delete('/:id', (req, res) => {
-    const id = req.params.id;
-    db.query('DELETE FROM mouvement WHERE idMouvement = ?', [id], (err) => {
+    const idUtilisateur = req.user.idUtilisateur;
+    db.query('SELECT * FROM compte WHERE idCompte = ? AND idUtilisateur = ?', [idCompte, idUtilisateur], (err, comptes) => {
         if (err) return res.status(500).json({ error: err });
-        res.json({ message: 'Mouvement supprimé' });
+        if (comptes.length === 0) return res.status(403).json({ error: 'Accès interdit au compte spécifié' });
+
+        db.query(
+            'INSERT INTO mouvement (dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement],
+            (err, result) => {
+                if (err) return res.status(500).json({ error: err });
+                res.status(201).json({ idMouvement: result.insertId, ...req.body });
+            }
+        );
     });
 });
 
