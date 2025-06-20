@@ -128,13 +128,6 @@ router.post('/login', (req, res) => {
  *     tags: [Utilisateurs]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
- *           example: Bearer <token>
  *     responses:
  *       200:
  *         description: Utilisateur trouvé
@@ -254,32 +247,39 @@ router.post('/', async (req, res) => {
   });
 });
 
-
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/users:
  *   patch:
- *     summary: Modifie un utilisateur
+ *     summary: Modifie l'utilisateur connecté
  *     tags: [Utilisateurs]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
+ *             required: [login, mdp]
+ *             properties:
+ *               nomUtilisateur:
+ *                 type: string
+ *                 example: "Boughriet"
+ *               prenomUtilisateur:
+ *                 type: string
+ *                 example: "Younes"
+ *               login:
+ *                 type: string
+ *                 example: "yns2"
+ *               mdp:
+ *                 type: string
+ *                 example: "yns10"
+ *               ville:
+ *                 type: string
+ *                 example: "Lens"
+ *               codePostal:
+ *                 type: string
+ *                 example: "62300"
  *     responses:
  *       200:
  *         description: Mise à jour réussie
@@ -293,8 +293,8 @@ router.post('/', async (req, res) => {
  *         description: Format non supporté
  */
 
-// PATCH /users/:id
-router.patch('/:id', auth, async (req, res) => {
+// PATCH /users
+router.patch('/', auth, async (req, res) => {
   // 415 Unsupported Media Type
   if (
     req.headers['content-type'] &&
@@ -311,7 +311,7 @@ router.patch('/:id', auth, async (req, res) => {
     return res.status(406).json({ error: 'Format non acceptable, veuillez utiliser JSON.' });
   }
 
-  const id = req.params.id;
+  const id = req.user.idUtilisateur;
   const fields = { ...req.body };
   const keys = Object.keys(fields);
   if (keys.length === 0) return res.status(400).json({ error: 'Aucun champ à mettre à jour.' });
@@ -353,23 +353,12 @@ router.patch('/:id', auth, async (req, res) => {
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/users:
  *   delete:
- *     summary: Supprime un utilisateur
+ *     summary: Supprime l'utilisateur connecté
  *     tags: [Utilisateurs]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *       - in: header
- *         name: Authorization
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
  *         description: Supprimé
@@ -379,8 +368,8 @@ router.patch('/:id', auth, async (req, res) => {
  *         description: Format non supporté
  */
 
-// DELETE /users/:id
-router.delete('/:id', auth, (req, res) => {
+// DELETE /users
+router.delete('/', auth, (req, res) => {
   // 415 Unsupported Media Type
   if (
     req.headers['content-type'] &&
@@ -398,7 +387,7 @@ router.delete('/:id', auth, (req, res) => {
     return res.status(406).json({ error: 'Format non acceptable, veuillez utiliser JSON.' });
   }
 
-  const id = req.params.id;
+  const id = req.user.idUtilisateur;
   db.query('DELETE FROM utilisateur WHERE idUtilisateur = ?', [id], (err, result) => {
     if (err) return res.status(500).json({ error: err });
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Utilisateur non trouvé' });
