@@ -189,6 +189,7 @@ router.get('/:id', auth, (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
+
 router.post('/', auth, (req, res) => {
     if (req.headers['content-type'] !== 'application/json')
         return res.status(415).json({ error: 'Format non supporté' });
@@ -208,8 +209,33 @@ router.post('/', auth, (req, res) => {
         return res.status(400).json({ error: 'Champs manquants ou invalides' });
     }
 
-    if (montant <= 0 || !["D", "C"].includes(typeMouvement))
-        return res.status(409).json({ error: 'Conflit : montant ou typeMouvement invalide' });
+    if (!["D", "C"].includes(typeMouvement))
+        return res.status(409).json({ error: 'Conflit : typeMouvement invalide (doit être D ou C)' });
+
+    if (typeof montant !== 'number' || isNaN(montant) || montant === 0) {
+        return res.status(400).json({ error: 'Le montant doit être un nombre non nul' });
+    }
+
+    let montantSigne;
+    let avertissement = null;
+
+    if (typeMouvement === "D") {
+        // Débit : doit être négatif
+        if (montant > 0) {
+            montantSigne = -montant;
+            avertissement = "Montant positif converti en négatif pour le débit";
+        } else {
+            montantSigne = montant;
+        }
+    } else {
+        // Crédit : doit être positif
+        if (montant < 0) {
+            montantSigne = -montant;
+            avertissement = "Montant négatif converti en positif pour le crédit";
+        } else {
+            montantSigne = montant;
+        }
+    }
 
     const idUtilisateur = req.user.idUtilisateur;
     db.query('SELECT * FROM compte WHERE idCompte = ? AND idUtilisateur = ?', [idCompte, idUtilisateur], (err, comptes) => {
@@ -218,13 +244,29 @@ router.post('/', auth, (req, res) => {
 
         db.query(
             'INSERT INTO mouvement (dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montant, typeMouvement],
+            [dateMouvement, idCompte, idTiers, idCategorie, idSousCategorie, idVirement, montantSigne, typeMouvement],
             (err, result) => {
                 if (err) return res.status(500).json({ error: err });
-                res.status(201).json({ idMouvement: result.insertId, ...req.body });
+
+                const response = {
+                    idMouvement: result.insertId,
+                    dateMouvement,
+                    idCompte,
+                    idTiers,
+                    idCategorie,
+                    idSousCategorie,
+                    idVirement,
+                    montant: montantSigne,
+                    typeMouvement
+                };
+
+                if (avertissement) {
+                    response.avertissement = avertissement;
+                }
+
+                res.status(201).json(response);
             }
         );
     });
 });
-
 module.exports = router;
