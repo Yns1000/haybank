@@ -182,14 +182,14 @@ router.post('/', auth, (req, res) => {
     const { descriptionCompte, nomBanque } = req.body;
     const idUtilisateur = req.user.idUtilisateur;
 
-    // Vérifie unicité de la description pour cet utilisateur
+    // Vérifie unicité de la description ET nomBanque pour cet utilisateur
     db.query(
-        'SELECT idCompte FROM compte WHERE descriptionCompte = ? AND idUtilisateur = ?',
-        [descriptionCompte, idUtilisateur],
+        'SELECT idCompte FROM compte WHERE descriptionCompte = ? AND nomBanque = ? AND idUtilisateur = ?',
+        [descriptionCompte, nomBanque, idUtilisateur],
         (err, results) => {
             if (err) return res.status(500).json({ error: err });
             if (results.length > 0) {
-                return res.status(409).json({ error: 'Un compte avec cette description existe déjà.' });
+                return res.status(409).json({ error: 'Un compte avec cette description et cette banque existe déjà.' });
             }
 
             db.query(
@@ -291,19 +291,40 @@ router.patch('/:id', auth, (req, res) => {
             return res.status(304).json({ message: 'Aucune modification détectée.' });
         }
 
-        // 409 Conflict si description déjà utilisée par un autre compte de l'utilisateur
-        if (fields.descriptionCompte) {
+        // 409 Conflict si description ET nomBanque déjà utilisée par un autre compte de l'utilisateur
+        if (fields.descriptionCompte && fields.nomBanque) {
             db.query(
-                'SELECT idCompte FROM compte WHERE descriptionCompte = ? AND idUtilisateur = ? AND idCompte != ?',
-                [fields.descriptionCompte, idUtilisateur, id],
+                'SELECT idCompte FROM compte WHERE descriptionCompte = ? AND nomBanque = ? AND idUtilisateur = ? AND idCompte != ?',
+                [fields.descriptionCompte, fields.nomBanque, idUtilisateur, id],
                 (err, doublon) => {
                     if (err) return res.status(500).json({ error: err });
                     if (doublon.length > 0) {
-                        return res.status(409).json({ error: 'Un compte avec cette description existe déjà.' });
+                        return res.status(409).json({ error: 'Un compte avec cette description et cette banque existe déjà.' });
                     }
                     updateCompte();
                 }
             );
+        } else if (fields.descriptionCompte || fields.nomBanque) {
+            // Si un seul des deux champs est modifié, il faut récupérer la valeur de l'autre champ pour vérifier le doublon
+            const champDesc = fields.descriptionCompte ? fields.descriptionCompte : undefined;
+            const champBanque = fields.nomBanque ? fields.nomBanque : undefined;
+            db.query('SELECT descriptionCompte, nomBanque FROM compte WHERE idCompte = ?', [id], (err, results) => {
+                if (err) return res.status(500).json({ error: err });
+                if (results.length === 0) return res.status(404).json({ error: 'Compte non trouvé' });
+                const desc = champDesc || results[0].descriptionCompte;
+                const banque = champBanque || results[0].nomBanque;
+                db.query(
+                    'SELECT idCompte FROM compte WHERE descriptionCompte = ? AND nomBanque = ? AND idUtilisateur = ? AND idCompte != ?',
+                    [desc, banque, idUtilisateur, id],
+                    (err, doublon) => {
+                        if (err) return res.status(500).json({ error: err });
+                        if (doublon.length > 0) {
+                            return res.status(409).json({ error: 'Un compte avec cette description et cette banque existe déjà.' });
+                        }
+                        updateCompte();
+                    }
+                );
+            });
         } else {
             updateCompte();
         }
