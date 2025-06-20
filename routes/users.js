@@ -4,6 +4,7 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const auth = require('../middlewares/auth');
+const EXPIRATION_HOURS = 1; // Durée de validité du token en heures
 
 /**
  * @swagger
@@ -112,10 +113,44 @@ router.post('/login', (req, res) => {
 
     // Génère un hashcode/token
     const hashcode = crypto.randomBytes(32).toString('hex');
-    db.query('UPDATE utilisateur SET hashcode = ? WHERE idUtilisateur = ?', [hashcode, user.idUtilisateur], (err) => {
-      if (err) return res.status(500).json({ error: err });
-      res.status(200).json({ hashcode });
-    });
+    const expiration = new Date(Date.now() + EXPIRATION_HOURS * 60 * 60 * 1000); // Expiration dans 1 heure
+    db.query(
+        'UPDATE utilisateur SET hashcode = ?, dateExpirationHash = ? WHERE idUtilisateur = ?',
+        [hashcode, expiration, user.idUtilisateur],
+        (err) => {
+          if (err) return res.status(500).json({ error: err });
+          res.status(200).json({ hashcode, expiration });
+        }
+    );
+  });
+});
+
+/**
+ * @swagger
+ * /api/users/logout:
+ *  post:
+ *    summary: Déconnecte l'utilisateur
+ *    tags: [Utilisateurs]
+ *    security:
+ *    - bearerAuth: []
+ *    responses:
+ *      200:
+ *        description: Déconnexion réussie
+ *      400:
+ *        description: Token manquant
+ *      401:
+ *        description: Token invalide
+ *      500:
+ *        description: Erreur serveur
+ */
+
+router.post('/logout', auth, (req, res) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(400).json({ error: 'Token manquant' });
+
+  db.query('UPDATE utilisateur SET hashcode = NULL, dateExpirationHash = NULL WHERE hashcode = ?', [token], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Erreur serveur' });
+    res.status(200).json({ message: 'Déconnexion réussie' });
   });
 });
 
